@@ -62,5 +62,5 @@ MRSSFeed.java pulls data from mysql database, creates the respective objects, an
 Mysql version 5.6.35 used in development of project. Mysql connection uses user inputed USERNAME and PASSWORD.
 
 # CodeFoo7-GridChainSolver
-Please refer to its respective repository <a href="https://github.com/JBallew92/CodeFoo7-GridChainSolver/edit/master/README.md">here</a>
+Please refer to its respective repository <a href="https://github.com/JBallew92/CodeFoo7-GridChainSolver">here</a>
 
