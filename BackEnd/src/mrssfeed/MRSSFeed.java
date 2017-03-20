@@ -54,37 +54,43 @@ public class MRSSFeed {
         String filename = System.getProperty("user.home");
         System.out.println("Name the output file: ");
         Scanner scanner = new Scanner(System.in);
-        filename += "\\" + scanner.nextLine() + ".xml";        
+        filename += "\\" + scanner.nextLine() + ".xml";
         try {
             docFactory = DocumentBuilderFactory.newInstance();
             docBuilder = docFactory.newDocumentBuilder();
-            // root elements
             doc = docBuilder.newDocument();
 
+            //rss is root element
             Element rss = doc.createElement("rss");
             rss.setAttribute("version", "2.0");
             rss.setAttribute("xmlns:media", "http://search.yahoo.com/mrss/");
             doc.appendChild(rss);
 
+            //channel is child to rss
             Element channel = doc.createElement("channel");
             rss.appendChild(channel);
 
+            //title is child to channel
             Element title = doc.createElement("title");
             title.appendChild(doc.createTextNode("IGN"));
             channel.appendChild(title);
 
+            //link is child to channel
             Element link = doc.createElement("link");
             link.appendChild(doc.createTextNode("https://www.ign.com"));
             channel.appendChild(link);
 
+            //description is child to channel
             Element description = doc.createElement("description");
             description.appendChild(doc.createTextNode("IGN is your site for Xbox One, PS4, "
                     + "PC, Wii-U, Xbox 360, PS3, Wii, 3DS, PS Vita &amp; iPhone games with expert reviews, news, previews, trailers, cheat codes, wiki guides &amp; walkthroughs"));
             channel.appendChild(description);
 
+            //image is child to channel
             Element image = doc.createElement("image");
             channel.appendChild(image);
 
+            //add image children. Title and link should match channel's title and link
             Element url = doc.createElement("url");
             url.appendChild(doc.createTextNode("http://oystatic.ignimgs.com/src/core/img/widgets/global/page/ign-logo-100x100.jpg"));
             image.appendChild(url);
@@ -96,7 +102,7 @@ public class MRSSFeed {
             Element imageLink = doc.createElement("link");
             imageLink.appendChild(doc.createTextNode("https://www.ign.com"));
             image.appendChild(imageLink);
-            
+
             Element width = doc.createElement("width");
             width.appendChild(doc.createTextNode("100"));
             image.appendChild(width);
@@ -118,14 +124,12 @@ public class MRSSFeed {
                 channel.appendChild(item);
                 getItem(videos.get(i), item);
             }
-            
+
+            //now output .xml file to user home directory
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(new File(filename));
-
-            // Output to console for testing
-            // StreamResult result = new StreamResult(System.out);
             transformer.transform(source, result);
             System.out.println("File saved to " + filename);
         } catch (IOException e) {
@@ -133,6 +137,7 @@ public class MRSSFeed {
         }
     }
 
+    //use of polymorphism due to different MRSS requirtements for video and article
     public static void getItem(Article article, Element item) throws MalformedURLException, ParseException {
         String parsedDate = ISO8601DateParser.parse(articles.get(0).getPubDate()).toString();
         Element title = doc.createElement("title");
@@ -200,12 +205,17 @@ public class MRSSFeed {
 
     public static void initializeDB() throws MalformedURLException {
         try {
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Enter Mysql username: ");
+            String username = scanner.nextLine();
+            System.out.println("Enter Mysql password: ");
+            String password = scanner.nextLine();
             ArrayList<Thumbnail> thumbnails;
             ArrayList<String> tags;
             ArrayList<String> networks;
             Class.forName("com.mysql.jdbc.Driver");
             System.out.println("Driver loaded");
-            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/igncodefoo", "root", "");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/igncodefoo", username, password);
             System.out.println("Database connected");
             Statement stmnt = conn.createStatement();
 
