@@ -30,15 +30,23 @@ import org.json.simple.JSONValue;
 
 /**
  *
- * @author James
+ * @author James Ballew
  */
 public class GenerateDB {
 
     static URL url;
+    static String username;
+    static String password;
     static ArrayList<Article> articles;
     static ArrayList<Video> videos;
+    static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) throws MalformedURLException, IOException, SQLException {
+        //get user input for mysql username and pw for future connection
+        System.out.println("Enter Mysql username: ");
+        username = scanner.nextLine();
+        System.out.println("Enter Mysql password: ");
+        password = scanner.nextLine();
         System.out.println("Loading in articles...");
         getArticles();
         System.out.println("Loading in videos...");
@@ -48,10 +56,9 @@ public class GenerateDB {
     }
 
     public static void getArticles() throws MalformedURLException, IOException {
-
         int index = getIndex();
-
         int count = getCount("articles", index);
+        
         //create url connection to API
         url = new URL("http://ign-apis.herokuapp.com/articles?startIndex=" + index + "\\u0026count=" + count + "");
         URLConnection urlc = url.openConnection();
@@ -64,7 +71,7 @@ public class GenerateDB {
             while ((temp = br.readLine()) != null) {
                 jsonContent += temp;
             }
-            //parse the JSON response
+            //parse the JSON response using json-simple.jar
             Object obj = JSONValue.parse(jsonContent);
             JSONObject jsonObject = (JSONObject) obj;
             Object data = jsonObject.get("data");
@@ -127,8 +134,6 @@ public class GenerateDB {
 
         url = new URL("http://ign-apis.herokuapp.com/videos?startIndex=" + index + "\\u0026count=" + count + "");
         URLConnection urlc = url.openConnection();
-        urlc.setDoOutput(true);
-        urlc.setAllowUserInteraction(false);
 
         try { //get result    
             BufferedReader br = new BufferedReader(new InputStreamReader(urlc
@@ -201,35 +206,44 @@ public class GenerateDB {
         }
     }
 
+    //gets user input for starting index used in api
     public static int getIndex() {
         System.out.println("What is the starting index?");
-        Scanner scanner = new Scanner(System.in);
+        scanner = new Scanner(System.in);
         int index = -1;
+        //index must be positive
         while (index < 0 && scanner.hasNextInt()) {
-            index = scanner.nextInt();
+                index = scanner.nextInt();
+                if (index < 0)
+                System.out.println("Please enter a positive whole number: ");
+           
         }
         return index;
     }
 
+    //gets user input for amount of information to me requested from api. Must be between 1 and 20 
+    //index + count can not exceed maximum index of 300
     public static int getCount(String type, int index) {
         System.out.println("How many " + type + " would you like to load (between 1 and 20)?");
-        Scanner scanner = new Scanner(System.in);
+        scanner = new Scanner(System.in);
         int count = 0;
-        while ((count < 1 || count > 20) && scanner.hasNextInt()) {
-            count = scanner.nextInt();
-            if ((index + count) > 300) {
-                System.out.println("Count can not exceed " + (300 - index));
-                count = 0;
+            while ((count < 1 || count > 20) && scanner.hasNextInt()) {
+                count = scanner.nextInt();
+                if ((index + count) > 300) {
+                    System.out.println("Count can not exceed " + (300 - index));
+                    count = 0;
+                    System.out.println("Please enter an integer less than " + (300 - index));
+                }
             }
-        }
         return count;
     }
-
+    
+    //initialize database
     public static void initializeDB() {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             System.out.println("Driver loaded");
-            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/igncodefoo", "root", "");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/igncodefoo", username, password);
             System.out.println("Database connected");
 
             //insert articles
@@ -293,7 +307,8 @@ public class GenerateDB {
             System.out.println("Failed");
         }
     }
-
+    
+    //insert thumbnail to thumbnail table, shared method by videos and articles
     public static void insertThumbnails(Connection conn, String title, ArrayList<Thumbnail> thumbnails) throws SQLException {
         PreparedStatement pstmtThumbnails = conn.prepareStatement("insert into Thumbnail "
                 + "(title, url, size, width, height) values (?, ?, ?, ?, ?)");
@@ -311,6 +326,7 @@ public class GenerateDB {
         }
     }
 
+    //insert networks to network table, shared method by videos and articles
     public static void insertNetworks(Connection conn, String title, ArrayList<String> networks) throws SQLException {
         PreparedStatement pstmtNetworks = conn.prepareStatement("insert into Network "
                 + "(title, network) values (?, ?)");
@@ -325,6 +341,7 @@ public class GenerateDB {
         }
     }
 
+    //insert tags into tags table, shared method by videos and articles.
     public static void insertTags(Connection conn, String title, ArrayList<String> tags) throws SQLException {
         PreparedStatement pstmtTags = conn.prepareStatement("insert into Tag "
                 + "(title, tag) values (?, ?)");
@@ -341,11 +358,12 @@ public class GenerateDB {
 
     //create database and tables if they don't exists.
     //Not sure if IGN wants .sql file for database so just building db in java
+    //.sql file will be posted to GitHub
     private static void createDatabase() throws SQLException {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             System.out.println("Driver loaded");
-            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/", "root", "");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/", username, password);
             Statement stmt = conn.createStatement();
             String checkDB = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'igncodefoo'";
             ResultSet rset = stmt.executeQuery(checkDB);
